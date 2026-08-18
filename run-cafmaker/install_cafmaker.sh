@@ -1,11 +1,19 @@
 #!/usr/bin/env bash
 
-export ND_PRODUCTION_RUNTIME=SHIFTER
-export ND_PRODUCTION_CONTAINER=fermilab/fnal-wn-sl7:latest
+export ND_PRODUCTION_RUNTIME=${ND_PRODUCTION_RUNTIME:-SHIFTER}
+
+export ND_PRODUCTION_CONTAINER=${ND_PRODUCTION_CONTAINER:-$ND_PRODUCTION_CONTAINER_CAF}
+export ND_PRODUCTION_CONTAINER=${ND_PRODUCTION_CONTAINER:-fermilab/fnal-wn-sl7:latest}
 
 source ../util/reload_in_container.inc.sh
 
 set +o errexit
+
+if [[ -d install ]]; then
+    echo "CAFMaker appears to be installed already."
+    echo "To force a reinstall, please delete the directory run-cafmaker/install"
+    exit
+fi
 
 mkdir install
 cd install
@@ -13,10 +21,10 @@ cd install
 git clone -b main https://github.com/DUNE/ND_CAFMaker.git
 cd ND_CAFMaker
 
-./build_deps.sh
-source ndcaf_setup.sh
-make -j8
-
+#./build_deps.sh
+source ndcaf_setup_deps.sh prof
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${PWD}/install
+cmake --build build --target install
 cd ../..
 
 # Pre-compile
