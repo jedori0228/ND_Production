@@ -17,15 +17,62 @@
 # `justin simple-workflow --env NAME=VALUE ...`, e.g.:
 #
 #   justin simple-workflow \
-#     --mql 'files from <caf-dataset-namespace:name>' \
+#     --mql 'files from <namespace>:<cafmaker-dataset> where core.data_tier=caf' \
 #     --jobscript run_cafnusyst.jobscript \
 #     --scope usertests \
 #     --image fnal-wn-el9:latest \
 #     --output-pattern '*.CAF.root:usertests-w${JUSTIN_WORKFLOW_ID}s${JUSTIN_STAGE_ID}' \
 #     --lifetime-days 30 \
-#     --env ND_PRODUCTION_NUSYST_CONFIG=default_nusyst_config.yaml
+#     --env ND_PRODUCTION_NUSYST_CONFIG=default_nusyst_config.yaml \
+#     --env ND_PRODUCTION_NAMESPACE=neardet-2x2-lar \
+#     --env ND_PRODUCTION_CAMPAIGN=<campaign-name>
+#
+# The `where core.data_tier=caf` clause selects only cafmaker's non-flat
+# *.CAF.root output (assuming cafmaker was itself submitted with
+# `--tier caf`, SubmitProductionJustIn.py's default for that stage --
+# confirm this against how it's actually run before relying on it). This
+# script also refuses to process a *.flat.root file defensively, in case
+# that filter is missing or wrong (see below).
 
 source "$(dirname "${BASH_SOURCE[0]}")/../util/init.justin.inc.sh"
+
+# Refuse a flat CAF file even if the submission's --mql didn't filter it
+# out: this stage is meant to consume cafmaker's non-flat *.CAF.root only.
+case "$(basename "$ND_PRODUCTION_INPUT_PATH")" in
+    *.flat.root)
+        echo "FATAL: got a flat CAF file ($ND_PRODUCTION_INPUT_PATH); this stage only processes non-flat *.CAF.root." >&2
+        exit 1
+        ;;
+esac
+
+# write_metadata <dataFile> <dataTier>
+#
+# Writes the MetaCat sidecar JSON for an output file via the sibling
+# write_caf_metadata.py (see that file for why this doesn't reuse
+# toolbox/scripts/MetadataExtract.py directly: it's wired to UPS, which
+# isn't available in this el9/spack container).
+write_metadata() {
+    local dataFile=$1 dataTier=$2
+    python3 "$(dirname "${BASH_SOURCE[0]}")/write_caf_metadata.py" \
+        --input "$dataFile" \
+        --parent-did "$ND_PRODUCTION_DID" \
+        --namespace "${ND_PRODUCTION_NAMESPACE:-neardet-2x2-lar}" \
+        --data-tier "$dataTier" \
+        --workflow-id "${JUSTIN_WORKFLOW_ID:-None}" \
+        --site-name "${JUSTIN_SITE_NAME:-None}" \
+        --campaign "${ND_PRODUCTION_CAMPAIGN:-None}" \
+        --application-name UpdateReweight
+}
+
+# ND_PRODUCTION_NAMESPACE: MetaCat namespace / Rucio scope for the output's
+# metadata -- TODO: neardet-2x2-lar matches CafmakerProduction.jobscript by
+# pattern-matching, not confirmed; verify before relying on it.
+export ND_PRODUCTION_NAMESPACE=${ND_PRODUCTION_NAMESPACE:-neardet-2x2-lar}
+
+# ND_PRODUCTION_DATA_TIER: core.data_tier value recorded in the output's
+# metadata. Deliberately distinct from cafmaker's own tiers ("caf" for the
+# non-flat file, "caf-flat-analysis" for the flat one).
+export ND_PRODUCTION_DATA_TIER=${ND_PRODUCTION_DATA_TIER:-caf-nusyst}
 
 # ND_PRODUCTION_NUSYST_CONFIG: the cafnusyst/nusystematics config (yaml)
 # naming which knobs to reweight, resolved relative to this directory unless
@@ -64,7 +111,7 @@ if [[ ! -f "$outFile" ]]; then
     exit 1
 fi
 
-write_metadata "$outFile" caf-nusyst root
+write_metadata "$outFile" "$ND_PRODUCTION_DATA_TIER"
 
 # Only mark the input DID as processed once the output file (which justIN
 # will look for using --output-pattern) is safely in place.

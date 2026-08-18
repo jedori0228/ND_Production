@@ -1,15 +1,23 @@
 #!/usr/bin/env bash
 # test_mock_local.sh: a fast, offline sanity check for run_cafnusyst.sh's
 # control flow (env var handling, path construction, UpdateReweight
-# invocation, metadata + justin-processed-dids.txt output) that runs on any
-# machine with plain bash -- no DUNE software, no justin, no cafnusyst, no
-# network required.
+# invocation, justin-processed-dids.txt output) that runs on any machine
+# with plain bash + python3 -- no DUNE software, no justin, no cafnusyst,
+# no network required.
 #
 # It fakes:
 #   - $JUSTIN_PATH/justin-get-file (returns a fixed DID/PFN, rse=MONTECARLO
 #     so init.justin.inc.sh's real `rucio download` step is skipped)
 #   - UpdateReweight (just touches whatever -o path it's given)
 #   - a placeholder nusyst config file
+#
+# write_caf_metadata.py itself is NOT faked -- it runs for real, against the
+# (empty, fake) output file. Without PyROOT available it still produces
+# valid metadata JSON with event counts of -1 (a real, intentional fallback
+# path -- see write_caf_metadata.py); with PyROOT available but no cafTree
+# in the fake output, same result. Either way this confirms the script
+# doesn't crash and the JSON shape is right; it does NOT confirm real event
+# counts get filled in correctly (needs a real cafTree, i.e. real testing).
 #
 # This does NOT exercise: the real cafnusyst spack environment, the real
 # rucio download, the real UpdateReweight binary, or justIN's actual job
@@ -51,20 +59,6 @@ done
 EOF
 chmod +x "$work/fake-bin/UpdateReweight"
 
-# GNU-style `stat --printf` shim, for testing on macOS (BSD stat); harmless
-# no-op wrapper on Linux where GNU stat is already the real one found first.
-if ! stat --printf='%s' "$0" >/dev/null 2>&1; then
-    cat > "$work/fake-bin/stat" <<'EOF'
-#!/usr/bin/env bash
-if [[ "$1" == "--printf=%s" ]]; then
-    /usr/bin/stat -f%z "$2"
-else
-    /usr/bin/stat "$@"
-fi
-EOF
-    chmod +x "$work/fake-bin/stat"
-fi
-
 : > "$work/fake_input.CAF.root"
 : > "$work/ND_Production/run-cafnusyst/default_nusyst_config.yaml"
 
@@ -96,13 +90,17 @@ echo "OK: mock run completed. Inspect $work for details, delete it when done."
 #      setup justin
 #      justin get-token   # first time / if your session expired
 #
-#      MQL='files from <namespace:caf-dataset-from-run-cafmaker> limit 1'
+#      MQL='files from <namespace>:<cafmaker-dataset> where core.data_tier=caf limit 1'
 #      justin-test-jobscript --mql "$MQL" \
 #        --jobscript run_cafnusyst.jobscript \
-#        --env ND_PRODUCTION_NUSYST_CONFIG=default_nusyst_config.yaml
+#        --env ND_PRODUCTION_NUSYST_CONFIG=default_nusyst_config.yaml \
+#        --env ND_PRODUCTION_NAMESPACE=neardet-2x2-lar \
+#        --env ND_PRODUCTION_CAMPAIGN=<campaign-name>
 #
 #    This prints the workspace directory it ran in (under /tmp) so you can
-#    inspect the output CAF file, its .json, and justin-processed-dids.txt.
+#    inspect the output CAF file, its .json (real MetaCat schema -- check
+#    core.events isn't -1, meaning PyROOT + the cafTree lookup worked), and
+#    justin-processed-dids.txt.
 #
 # 2) Once that's clean, do one real small-scale grid submission (a single
 #    job) before trusting it at scale:
@@ -112,7 +110,9 @@ echo "OK: mock run completed. Inspect $work for details, delete it when done."
 #        --scope usertests --image fnal-wn-el9:latest \
 #        --output-pattern '*.CAF.root:output-test' \
 #        --lifetime-days 1 \
-#        --env ND_PRODUCTION_NUSYST_CONFIG=default_nusyst_config.yaml
+#        --env ND_PRODUCTION_NUSYST_CONFIG=default_nusyst_config.yaml \
+#        --env ND_PRODUCTION_NAMESPACE=neardet-2x2-lar \
+#        --env ND_PRODUCTION_CAMPAIGN=<campaign-name>
 #
 #    then watch it on the justIN dashboard (https://dunejustin.fnal.gov/dashboard/)
 #    using the workflow ID it prints.

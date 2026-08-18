@@ -115,33 +115,11 @@ mark_processed() {
     echo "$ND_PRODUCTION_DID" >> "$ND_PRODUCTION_JUSTIN_WORKSPACE/justin-processed-dids.txt"
 }
 
-# write_metadata <dataFile> <dataTier> <fileFormat>
-#
-# Writes a minimal MetaCat-style sidecar JSON (<dataFile>.json) for an output
-# file, recording $ND_PRODUCTION_DID as its parent. This is a deliberately
-# minimal starting point -- TODO: review the schema/namespace/required
-# fields below against MetaCat's actual requirements for this data tier
-# before relying on it for real production (c.f. toolbox/scripts/
-# MetadataExtract.py for a much more complete, but 2x2/UPS-specific,
-# implementation of the same idea).
-write_metadata() {
-    local dataFile=$1 dataTier=$2 fileFormat=$3
-    local jsonFile="$dataFile".json
-    local size
-    size=$(stat --printf="%s" "$dataFile")
-    local now
-    now=$(date -u +%Y-%m-%dT%H:%M:%S)
-
-    cat > "$jsonFile" <<EOF
-{
-  "file_name": "$(basename "$dataFile")",
-  "file_type": "mc",
-  "data_tier": "$dataTier",
-  "file_format": "$fileFormat",
-  "file_size": $size,
-  "create_timestamp": "$now",
-  "parents": ["$ND_PRODUCTION_DID"],
-  "application": "cafnusyst"
-}
-EOF
-}
+# NOTE: metadata-JSON generation is NOT provided here. toolbox/scripts/
+# MetadataExtract.py (the tool CafmakerProduction.jobscript uses) is wired
+# internally to UPS (`setup metacat`, `setup python`, etc. inside its own
+# subprocess calls), which is not available inside justIN's el9/spack
+# container that run_*.sh scripts using this file run in. Each stage's
+# run_*.sh is expected to provide its own write_metadata(), matching
+# MetaCat's real schema with tools available in its own environment; see
+# run-cafnusyst/write_caf_metadata.py + run_cafnusyst.sh for the pattern.
