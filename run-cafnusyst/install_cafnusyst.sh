@@ -68,8 +68,9 @@ echo "# Fetching ND_Production (${ND_PRODUCTION_GIT_REF:-main})..."
 # runtime git clone (which depends on outbound network access from the
 # worker node, and floats with the branch tip unless ND_PRODUCTION_GIT_REF
 # is pinned to a tag).
-# TODO: Using custom repo, custom feature branch for now
-git clone --quiet --depth 1 --branch feature/jskim_cafnusyst_tammy-justin \
-    https://github.com/jedori0228/ND_Production.git
+# TODO: Using custom repo/branch for now, until this lands upstream.
+git clone --quiet --depth 1 \
+    --branch "${ND_PRODUCTION_GIT_REF:-feature/jskim_cafnusyst}" \
+    "${ND_PRODUCTION_GIT_REPO:-https://github.com/jedori0228/ND_Production.git}"
 
 cd ND_Production/run-cafnusyst

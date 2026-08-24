@@ -7,7 +7,7 @@
 #
 # It fakes:
 #   - $JUSTIN_PATH/justin-get-file (returns a fixed DID/PFN, rse=MONTECARLO
-#     so init.justin.inc.sh's real `rucio download` step is skipped)
+#     so init.justin.inc.cafnusyst.sh's real `rucio download` step is skipped)
 #   - UpdateReweight (just touches whatever -o path it's given)
 #   - a placeholder nusyst config file
 #

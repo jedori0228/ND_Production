@@ -9,7 +9,7 @@
 # run_cafnusyst.jobscript sets up the spack/cafnusyst environment before
 # invoking this script -- and it does not write into $ND_PRODUCTION_OUTDIR_BASE:
 # output is written straight into the justIN workspace so justIN's wrapper
-# job can find and upload it (see util/init.justin.inc.sh).
+# job can find and upload it (see init.justin.inc.cafnusyst.sh).
 #
 # Configuration is read from ND_PRODUCTION_* environment variables, in
 # keeping with the rest of this repo (c.f. run-genie/run_genie.sh). These
@@ -34,7 +34,7 @@
 # script also refuses to process a *.flat.root file defensively, in case
 # that filter is missing or wrong (see below).
 
-source "$(dirname "${BASH_SOURCE[0]}")/../util/init.justin.inc.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/init.justin.inc.cafnusyst.sh"
 
 # Refuse a flat CAF file even if the submission's --mql didn't filter it
 # out: this stage is meant to consume cafmaker's non-flat *.CAF.root only.

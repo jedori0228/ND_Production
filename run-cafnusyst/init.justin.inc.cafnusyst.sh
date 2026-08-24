@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source "$(dirname "${BASH_SOURCE[0]}")/prelude.inc.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../util/prelude.inc.sh"
 
 # This is the justIN counterpart to init.inc.sh / init.data.inc.sh, for
 # run_*.sh scripts that are meant to run as a stage of a justIN production
@@ -25,6 +25,13 @@ source "$(dirname "${BASH_SOURCE[0]}")/prelude.inc.sh"
 #
 # See https://justin.dune.hep.ac.uk/docs/jobscripts.md for the justIN-side
 # conventions this file implements.
+#
+# NOTE: this lives under run-cafnusyst/ rather than util/ deliberately, even
+# though it isn't cafnusyst-specific in principle: other justIN-based stages
+# (e.g. Tammy's toolbox/scripts work) may add their own similarly-purposed
+# util/init.justin*.inc.sh, and keeping this one local avoids a collision/
+# conflict when that lands. If a shared version emerges later, this can be
+# pointed at it (or deleted in favor of it).
 
 if [[ -z "$JUSTIN_PATH" ]]; then
     echo "FATAL: \$JUSTIN_PATH is not set. This script must be run inside a justIN job." >&2
