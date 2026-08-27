@@ -34,45 +34,38 @@ export SPACK_USER_CACHE_PATH=/home/workspace/spack-cache
 
 echo "# . /cvmfs/dune.opensciencegrid.org/spack/v1.1.1/setup-env.sh"
 . /cvmfs/dune.opensciencegrid.org/spack/v1.1.1/setup-env.sh
+
+# Not necessary unless you build the package
+#spack load /wrkusgq        # gcc
+#spack load /64q3lof        # cmake
+
 echo "# . subspack_base_v1.1.1/setup-env.sh"
 . subspack_base_v1.1.1/setup-env.sh
 
-echo "# source \$SPACK_ROOT/load-build_genie_v03_04_02.sh"
-source "${SPACK_ROOT}"/load-build_genie_v03_04_02.sh
+echo "# spack env activate build_genie_v03_04_02"
+spack env activate build_genie_v03_04_02
 
 echo "# Loading gcc, genie, genie-xsec, pythia6, eigen, yaml-cpp, duneanaobj, py-srproxy, cmake"
-spack load /wrkusgq        # gcc
 spack load genie
 spack load genie-xsec
 spack load pythia6
 export PYTHIA6=$(spack location -i pythia6)/lib
 spack load eigen
 spack load yaml-cpp
-
-
-USE_LOCAL_DUNEANAOBJ=true
-if [ "$USE_LOCAL_DUNEANAOBJ" = true ] ; then
-  echo "# using local duneanaobj, 04.01.00"
-  export CMAKE_PREFIX_PATH=${CAFNUSYST_WORKSPACE}/duneanaobj-install/local_v04_01_00:${CMAKE_PREFIX_PATH}
-  DUNEANAOBJ_VERSION_NAME=04_01_00
-else
-  echo "# loading duneanaobj@03.15.00 from spack"
-  # duneanaobj 03.15.00
-  spack load duneanaobj@03.15.00
-  DUNEANAOBJ_VERSION_NAME=03_15_00
-fi
-
+spack load duneanaobj@03.15.00
 spack load py-srproxy
 export CPLUS_INCLUDE_PATH="$(spack location -i py-srproxy)/include:$CPLUS_INCLUDE_PATH"
-spack load /64q3lof        # cmake
 
-echo "# source systematicstools-build/Linux/bin/setup.systematicstools.sh"
-source systematicstools-build/Linux/bin/setup.systematicstools.sh
-echo "# source nusystematics-build/Linux/bin/setup.nusystematics.sh"
-source nusystematics-build/Linux/bin/setup.nusystematics.sh
+echo "# source ${CAFNUSYST_WORKSPACE}/systematicstools-build/Linux/bin/setup.systematicstools.sh"
+source ${CAFNUSYST_WORKSPACE}/systematicstools-install/bin/setup.systematicstools.sh
 
-echo "# [setup.sh] source cafnusyst-install/for_duneanaobj_${DUNEANAOBJ_VERSION_NAME}/bin/setup.cafnusyst.sh"
-source cafnusyst-install/for_duneanaobj_v${DUNEANAOBJ_VERSION_NAME}/bin/setup.cafnusyst.sh
+echo "# source ${CAFNUSYST_WORKSPACE}/nusystematics-build/Linux/bin/setup.nusystematics.sh"
+source ${CAFNUSYST_WORKSPACE}/nusystematics-install/bin/setup.nusystematics.sh
+export NUSYST_DATA_DIR=${CAFNUSYST_WORKSPACE}/nusyst_data-src
+echo "# NUSYST_DATA_DIR is updated to ${NUSYST_DATA_DIR}"
+
+echo "# source ${CAFNUSYST_WORKSPACE}/cafnusyst-install/bin/setup.cafnusyst.sh"
+source ${CAFNUSYST_WORKSPACE}/cafnusyst-install/bin/setup.cafnusyst.sh
 
 echo "# Fetching ND_Production (${ND_PRODUCTION_GIT_REF:-main})..."
 # TODO: confirm this is the right way to get ND_Production onto the worker
