@@ -27,7 +27,7 @@ echo "# Extracting Spack environment from CVMFS..."
 # is not a stable location for production use. This needs to be replaced
 # with a properly versioned/published cafnusyst build (e.g. on CVMFS) before
 # this jobscript is used for real production running.
-TAR_PATH=${ND_PRODUCTION_CAFNUSYST_TARBALL:-/cvmfs/fifeuser3.opensciencegrid.org/sw/dune/e234edcc6c7dcf9d8b68e23fe61f63b2ad9dd5c0/my_grid_env.tar.gz}
+TAR_PATH=${ND_PRODUCTION_CAFNUSYST_TARBALL:-/cvmfs/fifeuser2.opensciencegrid.org/sw/dune/a2116fdebdb748ef9329dde4e51c46ae4a89f275/my_grid_env.tar.gz}
 tar -xzf "$TAR_PATH"
 
 export SPACK_USER_CACHE_PATH=/home/workspace/spack-cache
